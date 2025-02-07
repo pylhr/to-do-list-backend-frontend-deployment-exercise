@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Task List App</title>
+  <style>
+    body { font-family: Arial, sans-serif; }
+    #task-list { margin-top: 20px; }
+    .task { display: flex; justify-content: space-between; }
+    .task span { flex: 1; }
+  </style>
+</head>
+<body>
+  <h1>Task List</h1>
+  <form id="task-form">
+    <input type="text" id="task-input" placeholder="Add a new task" required>
+    <button type="submit">Add Task</button>
+  </form>
+
+  <ul id="task-list"></ul>
+
+  <script>
+    const taskForm = document.getElementById('task-form');
+    const taskInput = document.getElementById('task-input');
+    const taskList = document.getElementById('task-list');
+
+    const apiUrl = "https://your-render-backend-url/api/tasks";  // Replace with your Render backend URL
+
+    // Fetch tasks
+    async function fetchTasks() {
+      const response = await fetch(apiUrl);
+      const data = await response.json();
+      renderTasks(data.tasks);
+    }
+
+    // Render tasks in the list
+    function renderTasks(tasks) {
+      taskList.innerHTML = '';
+      tasks.forEach(task => {
+        const li = document.createElement('li');
+        li.classList.add('task');
+        li.innerHTML = `
+          <span>${task.title}</span>
+          <button onclick="deleteTask(${task.id})">Delete</button>
+          <button onclick="toggleCompleted(${task.id}, ${task.completed})">${task.completed ? 'Undo' : 'Complete'}</button>
+        `;
+        taskList.appendChild(li);
+      });
+    }
+
+    // Add a new task
+    taskForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const title = taskInput.value.trim();
+      if (title) {
+        await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title })
+        });
+        taskInput.value = '';
+        fetchTasks();
+      }
+    });
+
+    // Delete a task
+    async function deleteTask(id) {
+      await fetch(`${apiUrl}/${id}`, { method: 'DELETE' });
+      fetchTasks();
+    }
+
+    // Toggle task completion
+    async function toggleCompleted(id, completed) {
+      await fetch(`${apiUrl}/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ completed: !completed })
+      });
+      fetchTasks();
+    }
+
+    // Initial load
+    fetchTasks();
+  </script>
+</body>
+</html>
